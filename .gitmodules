@@ -1,0 +1,3 @@
+[submodule "libigl_fold"]
+	path = libigl_fold
+	url = https://github.com/Toshiki67/libigl_fold.git
