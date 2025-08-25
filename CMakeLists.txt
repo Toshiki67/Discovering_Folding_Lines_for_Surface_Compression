@@ -17,7 +17,7 @@ set(CMAKE_CXX_COMPILER "/opt/homebrew/opt/llvm/bin/clang++")
 # message("CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
 
 
-list(PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+# list(PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -30,8 +30,8 @@ endif()
 
 
 # Libigl
-# add_subdirectory(libigl)
-include(libigl)
+add_subdirectory(libigl_fold)
+# include(libigl)
 
 
 # Enable targets
@@ -97,35 +97,35 @@ find_package(autodiff REQUIRED)
 
 # Add your project files
 #file(GLOB SRC_FILES *.cpp)
-add_executable(${PROJECT_NAME} main.cpp
-        Constraint.cpp
-        Constraint.h
-        SelfCollision.cpp
-        SelfCollision.h
-        Optimization.cpp
-        Optimization.h
-        Isometry.cpp
-        Isometry.h
-        Closeness.cpp
-        Closeness.h
-        Boundary.cpp
-        Boundary.h
-        EdgeFlip.cpp
-        EdgeFlip.h
-        EdgeCollapse.cpp
-        EdgeCollapse.h
-        SymmetricDirichlet.cpp
-        SymmetricDirichlet.h
-        Adam.h
-        Angle.cpp
-        Angle.h
-        Angle_sub.cpp
-        Angle_sub.h
-        Uniform.cpp
-        Uniform.h
-        LocalICP.cpp
-        LocalICP.h
-        data.h)
+add_executable(${PROJECT_NAME} src/main.cpp
+        src/Constraint.cpp
+        src/Constraint.h
+        src/SelfCollision.cpp
+        src/SelfCollision.h
+        src/Optimization.cpp
+        src/Optimization.h
+        src/Isometry.cpp
+        src/Isometry.h
+        src/Closeness.cpp
+        src/Closeness.h
+        src/Boundary.cpp
+        src/Boundary.h
+        src/EdgeFlip.cpp
+        src/EdgeFlip.h
+        src/EdgeCollapse.cpp
+        src/EdgeCollapse.h
+        src/SymmetricDirichlet.cpp
+        src/SymmetricDirichlet.h
+        src/Adam.h
+        src/Angle.cpp
+        src/Angle.h
+        src/Angle_sub.cpp
+        src/Angle_sub.h
+        src/Uniform.cpp
+        src/Uniform.h
+        src/LocalICP.cpp
+        src/LocalICP.h
+        src/data.h)
         # Isometry.cpp
         # Isometry.h
         # Closeness.cpp
@@ -154,40 +154,42 @@ target_link_libraries(${PROJECT_NAME} PUBLIC igl::glfw igl::imgui igl::glfw igl:
 # target_link_libraries(viz PUBLIC igl::glfw igl::imgui igl::embree)
 message("CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
-add_executable(visualization Visualization.cpp
-ConnectFold.cpp
-ConnectFold.h
-Constraint.cpp
-        Constraint.h
-        Optimization.cpp
-        Optimization.h
-        Isometry.cpp
-        Isometry.h
-        Closeness.cpp
-        Closeness.h
-        Boundary.cpp
-        Boundary.h
-        EdgeFlip.cpp
-        EdgeFlip.h
-        EdgeCollapse.cpp
-        EdgeCollapse.h
-        SymmetricDirichlet.cpp
-        SymmetricDirichlet.h
-        Adam.h
-        Angle.cpp
-        Angle.h
-        Angle_sub.cpp
-        Angle_sub.h
-        Uniform.cpp
-        Uniform.h
-        LocalICP.cpp
-        LocalICP.h
-        data.h)
+add_executable(visualization src/Visualization.cpp
+        src/ConnectFold.cpp
+        src/ConnectFold.h
+        src/Constraint.cpp
+        src/Constraint.h
+        src/SelfCollision.cpp
+        src/SelfCollision.h
+        src/Optimization.cpp
+        src/Optimization.h
+        src/Isometry.cpp
+        src/Isometry.h
+        src/Closeness.cpp
+        src/Closeness.h
+        src/Boundary.cpp
+        src/Boundary.h
+        src/EdgeFlip.cpp
+        src/EdgeFlip.h
+        src/EdgeCollapse.cpp
+        src/EdgeCollapse.h
+        src/SymmetricDirichlet.cpp
+        src/SymmetricDirichlet.h
+        src/Adam.h
+        src/Angle.cpp
+        src/Angle.h
+        src/Angle_sub.cpp
+        src/Angle_sub.h
+        src/Uniform.cpp
+        src/Uniform.h
+        src/LocalICP.cpp
+        src/LocalICP.h
+        src/data.h)
 target_link_libraries(visualization PUBLIC igl::glfw igl::imgui igl::glfw igl::stb igl_copyleft::cgal igl::predicates OpenMP::OpenMP_CXX autodiff::autodiff)
 
 add_executable(collision
-        test_collision.cpp
-        SelfCollision.cpp
-        SelfCollision.h
-        data.h)
+        src/test_collision.cpp
+        src/SelfCollision.cpp
+        src/SelfCollision.h
+        src/data.h)
 target_link_libraries(collision PUBLIC igl::glfw igl::imgui igl::glfw igl::stb igl_copyleft::cgal igl::predicates OpenMP::OpenMP_CXX autodiff::autodiff)
