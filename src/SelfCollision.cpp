@@ -19,8 +19,8 @@ void BisectRangeCubicRoot(int &icnt, double &r0, double &r1, double &v0, double 
         return;
     double r2 = (r0 + r1) / 2;
     double v2 = EvaluateCubic(r2, k0, k1, k2, k3);
-    if( v0*v2 < 0 ){ r1 = r2; } // r0とr2の間で符号が変化する
-    else{            r0 = r2; } // r1とr2の間で符号が変化する
+    if( v0*v2 < 0 ){ r1 = r2; }
+    else{            r0 = r2; }
     BisectRangeCubicRoot(icnt,r0,r1,v0,v2,k0,k1,k2,k3);
 }
 
@@ -39,7 +39,7 @@ double FindCoplanerInterp(const Eigen::RowVector3d& s0, const Eigen::RowVector3d
     const Eigen::RowVector3d v1 = e1-e0-x1;
     const Eigen::RowVector3d v2 = e2-e0-x2;
     const Eigen::RowVector3d v3 = e3-e0-x3;
-    // 三次関数の係数の計算
+
     const double k0 = TripleProduct(x3,x1,x2);
     const double k1 = TripleProduct(v3,x1,x2)+TripleProduct(x3,v1,x2)+TripleProduct(x3,x1,v2);
     const double k2 = TripleProduct(v3,v1,x2)+TripleProduct(v3,x1,v2)+TripleProduct(x3,v1,v2);
@@ -49,8 +49,8 @@ double FindCoplanerInterp(const Eigen::RowVector3d& s0, const Eigen::RowVector3d
     const double f0 = EvaluateCubic(r0,k0,k1,k2,k3);
     const double f1 = EvaluateCubic(r1,k0,k1,k2,k3);
     double det = k2*k2-3*k1*k3;
-    if( std::abs(k3) < 1.0e-10 && std::abs(k2) > 1.0e-10 ){ // quadric function、二次関数
-      double r2 = -k1/(2*k2); // 極値をとるr
+    if( std::abs(k3) < 1.0e-10 && std::abs(k2) > 1.0e-10 ){ 
+      double r2 = -k1/(2*k2);
       const double f2 = EvaluateCubic(r2, k0,k1,k2,k3);
       if( r2 > 0 && r2 < 1 ){
         if(      f0*f2 < 0 ){
@@ -62,9 +62,9 @@ double FindCoplanerInterp(const Eigen::RowVector3d& s0, const Eigen::RowVector3d
         }
       }
     }
-    if( det > 0 && std::abs(k3) > 1.0e-10 ) // cubic function with two extream value、三次関数で極値がある場合
+    if( det > 0 && std::abs(k3) > 1.0e-10 )
     {
-      double r3 = (-k2-std::sqrt(det))/(3*k3); // 極値をとる小さい方のr
+      double r3 = (-k2-std::sqrt(det))/(3*k3);
       const double f3 = EvaluateCubic(r3, k0,k1,k2,k3);
       if( r3 > 0 && r3 < 1 ){
         if(      f0*f3 < 0 ){
@@ -74,7 +74,7 @@ double FindCoplanerInterp(const Eigen::RowVector3d& s0, const Eigen::RowVector3d
           return FindRootCubic(r3,r1, f3,f1, k0,k1,k2,k3);
         }
       }
-      double r4 = (-k2+std::sqrt(det))/(3*k3); // 極値をとる大きい方のr
+      double r4 = (-k2+std::sqrt(det))/(3*k3);
       const double f4 = EvaluateCubic(r4, k0,k1,k2,k3);
       if( r3 > 0 && r3 < 1 && r4 > 0 && r4 < 1 ){
         if( f3*f4 < 0 ){
@@ -90,8 +90,8 @@ double FindCoplanerInterp(const Eigen::RowVector3d& s0, const Eigen::RowVector3d
         }
       }
     }
-    // monotonus function、0と１の間で短調増加関数
-    if( f0*f1 > 0 ){ return -1; } // 根がない場合
+
+    if( f0*f1 > 0 ){ return -1; }
     return FindRootCubic(r0,r1, f0,f1, k0,k1,k2,k3);
   }
 
@@ -165,12 +165,12 @@ double Distance_EE(const Eigen::RowVector3d &Va, const Eigen::RowVector3d &Vb,
 
 double Height_FV(const Eigen::RowVector3d &Va, const Eigen::RowVector3d &Vb, 
     const Eigen::RowVector3d &Vc, const Eigen::RowVector3d &Vd){
-        // get normal vector
+
   double dtmp_x = (Vb(1)-Va(1))*(Vc(2)-Va(2))-(Vb(2)-Va(2))*(Vc(1)-Va(1));
   double dtmp_y = (Vb(2)-Va(2))*(Vc(0)-Va(0))-(Vb(0)-Va(0))*(Vc(2)-Va(2));
   double dtmp_z = (Vb(0)-Va(0))*(Vc(1)-Va(1))-(Vb(1)-Va(1))*(Vc(0)-Va(0));
     
-  // normalize normal vector
+
   const double dtmp1 = 1.0 / std::sqrt( dtmp_x*dtmp_x + dtmp_y*dtmp_y + dtmp_z*dtmp_z );
   dtmp_x *= dtmp1;
   dtmp_y *= dtmp1;
@@ -246,7 +246,7 @@ void Compute_SelfCollision(Meshes &meshes) {
     Eigen::Array<bool,Eigen::Dynamic,1> CP;
     igl::predicates::find_self_intersections(V,F,IF,CP,EV,EE,EI);
     std::cout << "Found " << IF.rows() << " self intersecting pairs" << std::endl;
-    // verify the self-intersecting pairs is edge-edge or face-vertex
+
     std::vector<std::vector<int>> &self_collision_pairs = meshes.self_collision_pairs;
     self_collision_pairs.clear();
     for (int i = 0; i < IF.rows(); i++) {
@@ -313,7 +313,7 @@ void Compute_SelfCollisionImpulse(std::vector<std::vector<int>> &self_collision_
             Eigen::RowVector3d Vel1 = meshes.Vel.row(p1);
             Eigen::RowVector3d Vel2 = meshes.Vel.row(p2);
             Eigen::RowVector3d Vel3 = meshes.Vel.row(p3);
-            if (type == 1) { // face vertex
+            if (type == 1) { 
                 double w0, w1;
                 double dist = Distance_FV(P0, P1, P2, P3, w0, w1);
                 if (w0 < 0 || w0 > 1) 
@@ -339,7 +339,7 @@ void Compute_SelfCollisionImpulse(std::vector<std::vector<int>> &self_collision_
                 meshes.Vel.row(p1) += -norm * imp_mod * w1;
                 meshes.Vel.row(p2) += -norm * imp_mod * w2;
                 meshes.Vel.row(p3) += norm * imp_mod;
-            } else { //edge edge
+            } else { 
                 double w01, w23;
                 double dist = Distance_EE(P0, P1, P2, P3, w01, w23);
                 if (w01 < 0 || w01 > 1) 
@@ -390,7 +390,7 @@ void Compute_SelfCollisionImpulse_CCD(std::vector<std::vector<int>> &self_collis
             Eigen::RowVector3d Vel3 = meshes.Vel.row(p3);
             double t = FindCoplanerInterp(P0, P1, P2, P3,P0+Vel0, P1+Vel1, P2+Vel2, P3+Vel3);
             if( t < 0 || t > 1 ) continue;
-            if(type == 1){ // face-vtx
+            if(type == 1){ 
                 double w0,w1;
                 {        
                     Eigen::RowVector3d p0m = P0 + t*Vel0;
@@ -406,8 +406,8 @@ void Compute_SelfCollisionImpulse_CCD(std::vector<std::vector<int>> &self_collis
                 Eigen::RowVector3d Pc = w0*P0 + w1*P1 + w2*P2;
                 Eigen::RowVector3d norm = P3 - Pc; 
                 norm = norm / norm.norm();
-                double rel_v = (Vel3-w0*Vel0-w1*Vel1-w2*Vel2).dot(norm); // relative velocity (positive if separating)
-                if( rel_v > 0.1*delta ) continue; // separating
+                double rel_v = (Vel3-w0*Vel0-w1*Vel1-w2*Vel2).dot(norm); 
+                if( rel_v > 0.1*delta ) continue; 
                 double imp = (0.1*delta-rel_v);
                 double imp_mod = 2*imp/(1.0+w0*w0+w1*w1+w2*w2);
                 imp_mod *= 0.1;
@@ -416,7 +416,7 @@ void Compute_SelfCollisionImpulse_CCD(std::vector<std::vector<int>> &self_collis
                 meshes.Vel.row(p2) += -norm*imp_mod*w2;
                 meshes.Vel.row(p3) += norm*imp_mod;
               }
-              else{ // edge-edge
+              else{ 
                 double w01,w23;
                 {
                     Eigen::RowVector3d p0m = P0 + t*Vel0;
@@ -433,8 +433,8 @@ void Compute_SelfCollisionImpulse_CCD(std::vector<std::vector<int>> &self_collis
                 Eigen::RowVector3d norm = (c23-c01);
                 norm = norm / norm.norm();
                 double rel_v = ((1-w23)*Vel2+w23*Vel3-(1-w01)*Vel0-w01*Vel1).dot(norm);
-                if( rel_v > 0.1*delta ) continue; // separating
-                double imp = (0.1*delta-rel_v); // reasonable
+                if( rel_v > 0.1*delta ) continue; 
+                double imp = (0.1*delta-rel_v); 
                 double imp_mod = 2*imp/( w01*w01+(1-w01)*(1-w01) + w23*w23+(1-w23)*(1-w23) );
                 imp_mod *= 0.1;
                 meshes.Vel.row(p0) += -norm*imp_mod*(1-w01);
@@ -447,14 +447,14 @@ void Compute_SelfCollisionImpulse_CCD(std::vector<std::vector<int>> &self_collis
 
 
 void MakeRigidImpactZone
-(std::vector< std::set<int> >& aRIZ, // (in,ou)RIZに属する節点のインデックスの集合の配列
- const std::vector<std::vector<int>>& aContactElem, // 自己交差する接触要素の配列
- const std::vector<std::vector<int>>& aEdge) // 三角形メッシュの辺の配列
+(std::vector< std::set<int> >& aRIZ,
+ const std::vector<std::vector<int>>& aContactElem, 
+ const std::vector<std::vector<int>>& aEdge) 
 {
   for(int ice=0;ice<aContactElem.size();ice++){
     const std::vector<int>& ce = aContactElem[ice];
     const int n[4] = {ce[0], ce[1], ce[2], ce[3]};
-    std::set<int> ind_inc; // 接触要素が接するRIZの集合
+    std::set<int> ind_inc; 
     for(int i=0;i<4;i++){
       const int ino = n[i];
       for(int iriz=0;iriz<aRIZ.size();iriz++){
@@ -470,22 +470,22 @@ void MakeRigidImpactZone
         }
       }
     }
-    if( ind_inc.size() == 0 ){ // 接触要素はどのRIZにも属していない
+    if( ind_inc.size() == 0 ){ 
       int ind0 = (int)aRIZ.size();
       aRIZ.resize(ind0+1);
       aRIZ[ind0].insert(n[0]); aRIZ[ind0].insert(n[1]); aRIZ[ind0].insert(n[2]); aRIZ[ind0].insert(n[3]);
     }
-    else if( ind_inc.size() == 1 ){ // 接触要素は一つのRIZに接する
+    else if( ind_inc.size() == 1 ){ 
       int ind0 = *(ind_inc.begin());
       aRIZ[ind0].insert(n[0]); aRIZ[ind0].insert(n[1]); aRIZ[ind0].insert(n[2]); aRIZ[ind0].insert(n[3]);
     }
-    else{ // overlapping two reagion，接触要素が複数のRIZに接するー＞接する複数のRIZをマージする
-      std::vector< std::set<int> > aRIZ1; // マージされた後のRIZの配列
-      for(int iriz=0;iriz<aRIZ.size();iriz++){ // 接さないRIZをコピー
+    else{ 
+      std::vector< std::set<int> > aRIZ1; 
+      for(int iriz=0;iriz<aRIZ.size();iriz++){ 
         if( ind_inc.find(iriz) != ind_inc.end() ) continue;
         aRIZ1.push_back( aRIZ[iriz] );
       }
-      // マージしたRIZを，aRIZ1の最後に追加
+
       int ind0 = (int)aRIZ1.size();
       aRIZ1.resize(ind0+1);
       for(std::set<int>::iterator itr=ind_inc.begin();itr!=ind_inc.end();itr++){
@@ -522,19 +522,18 @@ void CalcInvMat3(double ainv[], const double a[])
 }
 
 void ApplyRigidImpactZone
-(Eigen::MatrixXd& aUVWm, // (in,out)RIZで更新された中間速度
- ////
- const std::vector< std::set<int> >& aRIZ,  // (in)各RIZに属する節点の集合(set)の配列
- const Eigen::MatrixXd& aXYZ, // (in) 前ステップの節点の位置の配列
- const Eigen::MatrixXd& aUVWm0) // (in) RIZを使う前の中間速度
+(Eigen::MatrixXd& aUVWm, 
+ const std::vector< std::set<int> >& aRIZ, 
+ const Eigen::MatrixXd& aXYZ,
+ const Eigen::MatrixXd& aUVWm0)
 {
   for(int iriz=0;iriz<aRIZ.size();iriz++){
-    std::vector<int> aInd; // index of points belong to this RIZ
+    std::vector<int> aInd; 
     for(std::set<int>::iterator jtr=aRIZ[iriz].begin();jtr!=aRIZ[iriz].end();jtr++){
       aInd.push_back(*jtr);
     }
-    Eigen::RowVector3d gc(0,0,0); // 重心位置
-    Eigen::RowVector3d av(0,0,0); // 平均速度
+    Eigen::RowVector3d gc(0,0,0);
+    Eigen::RowVector3d av(0,0,0);
     for(int iv=0;iv<aInd.size();iv++){
       int ino = aInd[iv];
       gc += aXYZ.row(ino);
@@ -542,31 +541,28 @@ void ApplyRigidImpactZone
     }
     gc /= (double)aInd.size();
     av /= (double)aInd.size();
-    Eigen::RowVector3d L(0,0,0); // 角運動量
-    double I[9] = {0,0,0, 0,0,0, 0,0,0}; // 慣性テンソル
-    // Eigen::MatrixXd I = Eigen::MatrixXd::Zero(3,3);
+    Eigen::RowVector3d L(0,0,0);
+    double I[9] = {0,0,0, 0,0,0, 0,0,0};
+
     for(int iv=0;iv<aInd.size();iv++){
       int ino = aInd[iv];
       Eigen::RowVector3d p = aXYZ.row(ino);
       Eigen::RowVector3d v = aUVWm0.row(ino);
-    //   L += Cross(p-gc,v-av);
+
         L += (p-gc).cross(v-av);
     Eigen::RowVector3d q = p-gc;
-    //   I[0] += v.dot(v) - q(0)*q(0);  I[1] +=     - q(0)*q(1);  I[2] +=     - q(0)*q(2);
-    //   I[3] +=     - q(1)*q(0);  I[4] += v.dot(v) - q(1)*q(1);  I[5] +=     - q(1)*q(2);
-    //   I[6] +=     - q(2)*q(0);  I[7] +=     - q(2)*q(1);  I[8] += v.dot(v) - q(2)*q(2);
     I[0] += q[1]*q[1] + q[2]*q[2];  I[1] += -q[0]*q[1];           I[2] += -q[0]*q[2];
     I[3] += -q[1]*q[0];             I[4] += q[0]*q[0] + q[2]*q[2];I[5] += -q[1]*q[2];
     I[6] += -q[2]*q[0];             I[7] += -q[2]*q[1];           I[8] += q[0]*q[0] + q[1]*q[1];
     }
-    // 角速度を求める
+
     double Iinv[9];
     CalcInvMat3(Iinv,I);
     Eigen::RowVector3d omg;
     omg(0) = Iinv[0]*L(0) + Iinv[1]*L(1) + Iinv[2]*L(2);
     omg(1) = Iinv[3]*L(0) + Iinv[4]*L(1) + Iinv[5]*L(2);
     omg(2) = Iinv[6]*L(0) + Iinv[7]*L(1) + Iinv[8]*L(2);
-    // 中間速度の更新
+
     for(int iv=0;iv<aInd.size();iv++){
       int ino = aInd[iv];
       Eigen::RowVector3d p = aXYZ.row(ino);

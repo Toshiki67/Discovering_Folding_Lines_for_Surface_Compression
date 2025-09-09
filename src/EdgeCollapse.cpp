@@ -38,13 +38,10 @@ void Compute_EdgeCollapse(Meshes &meshes) {
     Eigen::MatrixXd VO;
     Eigen::MatrixXd VO_undeformed;
     Eigen::MatrixXi FO;
-    std::cout << "Start connect_boundary_to_infinity" << std::endl;
     igl::connect_boundary_to_infinity(meshes.V_deformed,meshes.V_undeformed,meshes.F_undeformed,VO,VO_undeformed,FO);
-    std::cout << "Finish connect_boundary_to_infinity" << std::endl;
     Eigen::VectorXi EMAP;
     Eigen::MatrixXi E,EF,EI;
     igl::edge_flaps(FO,E,EMAP,EF,EI);
-    std::cout << "Finish edge_flaps" << std::endl;
 
     igl::decimate_cost_and_placement_callback cost_and_placement;
     igl::decimate_pre_collapse_callback  pre_collapse;
@@ -60,13 +57,11 @@ void Compute_EdgeCollapse(Meshes &meshes) {
     // Callbacks for computing and updating metric
     igl::qslim_optimal_collapse_edge_callbacks(
       E,quadrics,v1,v2, cost_and_placement, pre_collapse,post_collapse);
-    std::cout << "set up cost_and_placement" << std::endl;
 
     igl::AABB<Eigen::MatrixXd, 3> * tree = new igl::AABB<Eigen::MatrixXd, 3>();
     tree->init(meshes.V_deformed,meshes.F_deformed);
     tree->validate();
 
-    std::cout << "Finish validate" << std::endl;
 
     igl::intersection_blocking_collapse_edge_callbacks(
       pre_collapse, post_collapse, // These will get copied as needed
@@ -87,7 +82,6 @@ void Compute_EdgeCollapse(Meshes &meshes) {
     meshes.N_undeformed_opt.conservativeResize(FO.rows(), 3);
     meshes.N_deformed_opt.bottomLeftCorner(additional_rows, meshes.N_deformed_opt.cols()) = Eigen::MatrixXd::Zero(additional_rows, meshes.N_deformed_opt.cols());
     meshes.N_undeformed_opt.bottomLeftCorner(additional_rows, meshes.N_undeformed_opt.cols()) = Eigen::MatrixXd::Zero(additional_rows, meshes.N_undeformed_opt.cols());
-    std::cout <<"Ready to decimate" << std::endl;
     const bool ret = igl::decimate(
       VO, VO_undeformed, FO,
       cost_and_placement,
@@ -99,7 +93,6 @@ void Compute_EdgeCollapse(Meshes &meshes) {
     G = G(igl::find((J.array()<orig_m).eval()), igl::placeholders::all).eval();
     meshes.N_deformed_opt = meshes.N_deformed_opt(igl::find((J.array()<orig_m).eval()), igl::placeholders::all).eval();
     meshes.N_undeformed_opt = meshes.N_undeformed_opt(igl::find((J.array()<orig_m).eval()), igl::placeholders::all).eval();
-    std::cout << "G.rows() " << G.rows() << std::endl;
     {
       Eigen::VectorXi I_sub;
       Eigen::VectorXi _;
@@ -119,16 +112,12 @@ void Compute_EdgeCollapse(Meshes &meshes) {
     Eigen::MatrixXi IF,EE;
     Eigen::Array<bool,Eigen::Dynamic,1> CP;
     igl::predicates::find_self_intersections(meshes.V_deformed,meshes.F_deformed,IF,CP,EV,EE,EI_);
-    std::cout << "Edge Collapse:" << IF.rows() << std::endl;
 }
 
 
 void Compute_subdivide_mesh(Meshes &meshes) {
     Eigen::VectorXd area;
     igl::doublearea(meshes.V_undeformed, meshes.F_undeformed, area);
-    // if area is over 1.0, then subdivide
-    std::cout << "max area: " << area.maxCoeff() << std::endl;
-    std::cout << "mean area: " << area.mean() << std::endl;
 
     double threshold = 4.0;
     Eigen::MatrixXd V_sub_undeformed = meshes.V_undeformed;

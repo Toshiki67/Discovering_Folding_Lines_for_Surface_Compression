@@ -26,12 +26,10 @@ void computeSurfaceGradientPerFace(const Eigen::MatrixXd &V, const Eigen::Matrix
     Eigen::PermutationMatrix<3> P = Eigen::PermutationMatrix<3>(Pi);
 
     for (int i = 0; i < Fn; i++) {
-        // renaming indices of vertices of triangles for convenience
         int i1 = F(i, 0);
         int i2 = F(i, 1);
         int i3 = F(i, 2);
 
-        // #F x 3 matrices of triangle edge vectors, named after opposite vertices
         Eigen::Matrix3d e;
         e.col(0) = V.row(i2) - V.row(i1);
         e.col(1) = V.row(i3) - V.row(i2);
@@ -40,7 +38,6 @@ void computeSurfaceGradientPerFace(const Eigen::MatrixXd &V, const Eigen::Matrix
         Eigen::Vector3d Fni = fN.row(i);
         double Ari = Ar(i);
 
-        //grad3_3f(:,[3*i,3*i-2,3*i-1])=[0,-Fni(3), Fni(2);Fni(3),0,-Fni(1);-Fni(2),Fni(1),0]*e/(2*Ari);
         Eigen::Matrix3d n_M;
         n_M << 0, -Fni(2), Fni(1), Fni(2), 0, -Fni(0), -Fni(1), Fni(0), 0;
         Eigen::VectorXi R(3); R << 0, 1, 2;
@@ -87,7 +84,6 @@ void SymmetricDirichlet_initailize(Meshes &meshes)
 void Compute_Quad_SymmetricDirichlet(Meshes &meshes) 
 {
     meshes.Quad_Symmetric_C = 0.0;
-    // igl::parallel_for(meshes.F_undeformed.rows(), [&](int i) {
     #pragma omp parallel for
     for (int i = 0; i < meshes.F_undeformed.rows(); i++) {
         int v0_index = meshes.F_undeformed(i, 0);
@@ -119,10 +115,8 @@ void Compute_Quad_SymmetricDirichlet(Meshes &meshes)
         #pragma omp atomic
 		meshes.Quad_Symmetric_C += meshes.restShapeArea(i) * energy;
     }
-    // },10000);
 
 
-    // igl::parallel_for(meshes.F_deformed.rows(), [&](int i) {
     #pragma omp parallel for
     for (int i = 0; i < meshes.F_deformed.rows(); i++) {
         int v0_index = meshes.F_deformed(i, 0);
@@ -154,7 +148,6 @@ void Compute_Quad_SymmetricDirichlet(Meshes &meshes)
         #pragma omp atomic
 		meshes.Quad_Symmetric_C += meshes.restShapeArea(i + meshes.F_undeformed.rows()) * energy;
     }
-    // },10000);
 }
 
 
@@ -162,7 +155,6 @@ void Compute_Quad_derivatives_SymmetricDirichlet(Meshes &meshes)
 {
 	meshes.Quad_Symmetric_grad = Eigen::MatrixXd::Zero(meshes.V_undeformed.rows() + meshes.V_deformed.rows(), 3);
 
-	// igl::parallel_for(meshes.F_undeformed.rows(), [&](int i) {
     #pragma omp parallel for
     for (int i = 0; i < meshes.F_undeformed.rows(); i++) {
 		int v0_index = meshes.F_undeformed(i, 0);
@@ -178,8 +170,7 @@ void Compute_Quad_derivatives_SymmetricDirichlet(Meshes &meshes)
 		Eigen::RowVector3d Xi;
         Xi << V0.dot(B1), V1.dot(B1), V2.dot(B1);
 		Eigen::RowVector3d Yi;
-        Yi << V0.dot(B2), V1.dot(B2), V2.dot(B2);
-		//prepare jacobian		
+        Yi << V0.dot(B2), V1.dot(B2), V2.dot(B2);	
 		const double a = meshes.D1d.row(i).dot(Xi);
 		const double b = meshes.D1d.row(i).dot(Yi);
 		const double c = meshes.D2d.row(i).dot(Xi);
@@ -327,11 +318,8 @@ void Compute_Quad_derivatives_SymmetricDirichlet(Meshes &meshes)
         #pragma omp atomic
         meshes.Quad_Symmetric_grad(v2_index, 2) += de_dJ.dot(dj_dx);
     }
-	// },10000);
 
 
-
-    // igl::parallel_for(meshes.F_deformed.rows(), [&](int i) {
     #pragma omp parallel for
     for (int i = 0; i < meshes.F_deformed.rows(); i++) {
 		int v0_index = meshes.F_deformed(i, 0);
@@ -348,423 +336,7 @@ void Compute_Quad_derivatives_SymmetricDirichlet(Meshes &meshes)
         Xi << V0.dot(B1), V1.dot(B1), V2.dot(B1);
 		Eigen::RowVector3d Yi;
         Yi << V0.dot(B2), V1.dot(B2), V2.dot(B2);
-		//prepare jacobian		
-		const double a = meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(Xi);
-		const double b = meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(Yi);
-		const double c = meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(Xi);
-		const double d = meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(Yi);
-		const double detJ = a * d - b * c;
-		const double det2 = detJ * detJ;
-		const double a2 = a * a;
-		const double b2 = b * b;
-		const double c2 = c * c;
-		const double d2 = d * d;
-		const double det3 = std::pow(detJ, 3);
-		const double Fnorm = a2 + b2 + c2 + d2;
-
-		Eigen::VectorXd de_dJ(4);
-        de_dJ <<
-			meshes.restShapeArea(i + meshes.F_undeformed.rows()) * (a + a / det2 - d * Fnorm / det3),
-			meshes.restShapeArea(i + meshes.F_undeformed.rows()) * (b + b / det2 + c * Fnorm / det3),
-			meshes.restShapeArea(i + meshes.F_undeformed.rows()) * (c + c / det2 + b * Fnorm / det3),
-			meshes.restShapeArea(i + meshes.F_undeformed.rows()) * (d + d / det2 - a * Fnorm / det3);
-		double Norm_e10_3 = std::pow(e10.norm(), 3);
-		Eigen::RowVector3d B2_b2 = e10.cross(e20).cross(e10);
-		double Norm_B2 = B2_b2.norm();
-		double Norm_B2_2 = pow(Norm_B2, 2);
-		Eigen::RowVector3d B2_dxyz0, B2_dxyz1;
-		double B2_dnorm0, B2_dnorm1;
-		Eigen::RowVector3d db1_dX, db2_dX, XX, YY;
 		
-        B2_dxyz0 << -e10(1) * e20(1) - e10(2) * e20(2), 2 * e10(0) * e20(1) - e10(1) * e20(0), -e10(2) * e20(0) + 2 * e10(0) * e20(2);
-        B2_dxyz1 << std::pow(e10(1), 2) + std::pow(e10(2), 2), -e10(0) * e10(1), -e10(0) * e10(2);
-        B2_dnorm0 = B2_b2.dot(B2_dxyz0) / Norm_B2;
-        B2_dnorm1 = B2_b2.dot(B2_dxyz1) / Norm_B2;
-        db2_dX << -(B2_dxyz0(0) * Norm_B2 - B2_b2(0) * B2_dnorm0) / Norm_B2_2 - (B2_dxyz1(0) * Norm_B2 - B2_b2(0) * B2_dnorm1) / Norm_B2_2,
-            -(B2_dxyz0(1) * Norm_B2 - B2_b2(1) * B2_dnorm0) / Norm_B2_2 - (B2_dxyz1(1) * Norm_B2 - B2_b2(1) * B2_dnorm1) / Norm_B2_2,
-            -(B2_dxyz0(2) * Norm_B2 - B2_b2(2) * B2_dnorm0) / Norm_B2_2 - (B2_dxyz1(2) * Norm_B2 - B2_b2(2) * B2_dnorm1) / Norm_B2_2;
-        db1_dX << -(std::pow(e10(1), 2) + std::pow(e10(2), 2)) / Norm_e10_3, (e10(1) * e10(0)) / Norm_e10_3, (e10(2) * e10(0)) / Norm_e10_3;
-        XX << V0.dot(db1_dX) + B1(0), V1.dot(db1_dX), V2.dot(db1_dX);
-        YY << V0.dot(db2_dX) + B2(0), V1.dot(db2_dX), V2.dot(db2_dX);
-        Eigen::VectorXd dj_dx(4);
-        dj_dx << meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(XX), meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(YY), meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(XX), meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(YY);
-		#pragma omp atomic
-		meshes.Quad_Symmetric_grad(v0_index + meshes.V_undeformed.rows(), 0) += de_dJ.dot(dj_dx);
-
-        B2_dxyz0 << -e10(1) * e20(1) - e10(2) * e20(2), 2 * e10(0) * e20(1) - e10(1) * e20(0), -e10(2) * e20(0) + 2 * e10(0) * e20(2);
-        B2_dnorm0 = B2_b2.dot(B2_dxyz0) / Norm_B2;
-
-		db2_dX << 
-			(B2_dxyz0(0) * Norm_B2 - B2_b2(0) * B2_dnorm0) / Norm_B2_2,
-			(B2_dxyz0(1) * Norm_B2 - B2_b2(1) * B2_dnorm0) / Norm_B2_2,
-			(B2_dxyz0(2) * Norm_B2 - B2_b2(2) * B2_dnorm0) / Norm_B2_2;
-        db1_dX << -(-(std::pow(e10(1), 2) + std::pow(e10(2), 2)) / Norm_e10_3), -((e10(1) * e10(0)) / Norm_e10_3), -((e10(2) * e10(0)) / Norm_e10_3);
-        XX << V0.dot(db1_dX), V1.dot(db1_dX) + B1(0), V2.dot(db1_dX);
-        YY << V0.dot(db2_dX), V1.dot(db2_dX) + B2(0), V2.dot(db2_dX);
-		dj_dx << meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(XX), meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(YY), meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(XX), meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(YY);
-        #pragma omp atomic
-		meshes.Quad_Symmetric_grad(v1_index + meshes.V_undeformed.rows(), 0) += de_dJ.dot(dj_dx);
-
-        B2_dxyz0 << std::pow(e10(1), 2) + std::pow(e10(2), 2), -e10(0) * e10(1), -e10(0) * e10(2);
-        B2_dnorm0 = B2_b2.dot(B2_dxyz0) / Norm_B2;
-        db2_dX << B2_dxyz0(0) * Norm_B2 - B2_b2(0) * B2_dnorm0 / Norm_B2_2,
-            B2_dxyz0(1) * Norm_B2 - B2_b2(1) * B2_dnorm0 / Norm_B2_2,
-            B2_dxyz0(2) * Norm_B2 - B2_b2(2) * B2_dnorm0 / Norm_B2_2;
-        XX << 0, 0, B1(0);
-        YY << V0.dot(db2_dX), V1.dot(db2_dX), V2.dot(db2_dX) + B2(0);
-        dj_dx << meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(XX), meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(YY), meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(XX), meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(YY);
-        #pragma omp atomic
-        meshes.Quad_Symmetric_grad(v2_index + meshes.V_undeformed.rows(), 0) += de_dJ.dot(dj_dx);
-
-
-        B2_dxyz0 << -e10(1) * e20(1) + 2 * e10(1) * e20(0), -e10(2) * e20(2) - e20(0) * e10(0), 2 * e10(1) * e20(2) - e10(2) * e20(1);
-        B2_dxyz1 << -e10(1) * e10(0), std::pow(e10(2), 2) + std::pow(e10(0), 2), -e10(2) * e10(1);
-        B2_dnorm0 = B2_b2.dot(B2_dxyz0) / Norm_B2;
-        B2_dnorm1 = B2_b2.dot(B2_dxyz1) / Norm_B2;
-        db2_dX << -((B2_dxyz0(0) * Norm_B2 - B2_b2(0) * B2_dnorm0) / Norm_B2_2) - ((B2_dxyz1(0) * Norm_B2 - B2_b2(0) * B2_dnorm1) / Norm_B2_2),
-            -((B2_dxyz0(1) * Norm_B2 - B2_b2(1) * B2_dnorm0) / Norm_B2_2) - ((B2_dxyz1(1) * Norm_B2 - B2_b2(1) * B2_dnorm1) / Norm_B2_2),
-            -((B2_dxyz0(2) * Norm_B2 - B2_b2(2) * B2_dnorm0) / Norm_B2_2) - ((B2_dxyz1(2) * Norm_B2 - B2_b2(2) * B2_dnorm1) / Norm_B2_2);
-        db1_dX << ((e10(1) * e10(0)) / Norm_e10_3), (-(std::pow(e10(0), 2) + std::pow(e10(2), 2)) / Norm_e10_3), ((e10(2) * e10(1)) / Norm_e10_3);
-        XX << V0.dot(db1_dX) + B1(1), V1.dot(db1_dX), V2.dot(db1_dX);
-        YY << V0.dot(db2_dX) + B2(1), V1.dot(db2_dX), V2.dot(db2_dX);
-		dj_dx << meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(XX), meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(YY), meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(XX), meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(YY);
-        #pragma omp atomic
-		meshes.Quad_Symmetric_grad(v0_index + meshes.V_undeformed.rows(), 1) += de_dJ.dot(dj_dx);
-
-
-        B2_dxyz0 << -e10(0) * e20(1) + 2 * e10(1) * e20(0), -e10(2) * e20(2) - e20(0) * e10(0), 2 * e10(1) * e20(2) - e10(2) * e20(1);
-        B2_dnorm0 = B2_b2.dot(B2_dxyz0) / Norm_B2;
-        db2_dX << ((B2_dxyz0(0) * Norm_B2 - B2_b2(0) * B2_dnorm0) / Norm_B2_2),
-            ((B2_dxyz0(1) * Norm_B2 - B2_b2(1) * B2_dnorm0) / Norm_B2_2),
-            ((B2_dxyz0(2) * Norm_B2 - B2_b2(2) * B2_dnorm0) / Norm_B2_2);
-        db1_dX << -((e10(1) * e10(0)) / Norm_e10_3), -(-(pow(e10(0), 2) + pow(e10(2), 2)) / Norm_e10_3), -((e10(2) * e10(1)) / Norm_e10_3);
-        XX << V0.dot(db1_dX), V1.dot(db1_dX) + B1(1), V2.dot(db1_dX);
-        YY << V0.dot(db2_dX), V1.dot(db2_dX) + B2(1), V2.dot(db2_dX);
-        dj_dx << meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(XX), meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(YY), meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(XX), meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(YY);
-        #pragma omp atomic
-        meshes.Quad_Symmetric_grad(v1_index + meshes.V_undeformed.rows(), 1) += de_dJ.dot(dj_dx);
-
-
-        B2_dxyz0 << -e10(1) * e10(0), std::pow(e10(2), 2) + std::pow(e10(0), 2), -e10(2) * e10(1);
-        B2_dnorm0 = B2_b2.dot(B2_dxyz0) / Norm_B2;
-        db2_dX << (B2_dxyz0(0) * Norm_B2 - B2_b2(0) * B2_dnorm0) / Norm_B2_2,
-            (B2_dxyz0(1) * Norm_B2 - B2_b2(1) * B2_dnorm0) / Norm_B2_2,
-            (B2_dxyz0(2) * Norm_B2 - B2_b2(2) * B2_dnorm0) / Norm_B2_2;
-        XX << 0, 0, B1(1);
-        YY << V0.dot(db2_dX), V1.dot(db2_dX), V2.dot(db2_dX) + B2(1);
-        dj_dx << meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(XX), meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(YY), meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(XX), meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(YY);
-        #pragma omp atomic
-        meshes.Quad_Symmetric_grad(v2_index + meshes.V_undeformed.rows(), 1) += de_dJ.dot(dj_dx);
-
-
-        B2_dxyz0 << 2 * e10(2) * e20(0) - e10(0) * e20(2), -e10(1) * e20(2) + 2 * e10(2) * e20(1), -e10(0) * e20(0) - e10(1) * e20(1);
-        B2_dxyz1 << -e10(0) * e10(2), -e10(2) * e10(1), std::pow(e10(0), 2) + std::pow(e10(1), 2);
-        B2_dnorm0 = B2_b2.dot(B2_dxyz0) / Norm_B2;
-        B2_dnorm1 = B2_b2.dot(B2_dxyz1) / Norm_B2;
-        db2_dX << -((B2_dxyz0(0) * Norm_B2 - B2_b2(0) * B2_dnorm0) / Norm_B2_2) - ((B2_dxyz1(0) * Norm_B2 - B2_b2(0) * B2_dnorm1) / Norm_B2_2),
-			-((B2_dxyz0(1) * Norm_B2 - B2_b2(1) * B2_dnorm0) / Norm_B2_2) - ((B2_dxyz1(1) * Norm_B2 - B2_b2(1) * B2_dnorm1) / Norm_B2_2),
-			-((B2_dxyz0(2) * Norm_B2 - B2_b2(2) * B2_dnorm0) / Norm_B2_2) - ((B2_dxyz1(2) * Norm_B2 - B2_b2(2) * B2_dnorm1) / Norm_B2_2);
-        db1_dX << ((e10(2) * e10(0)) / Norm_e10_3), ((e10(2) * e10(1)) / Norm_e10_3), (-(pow(e10(0), 2) + pow(e10(1), 2)) / Norm_e10_3);
-        XX << V0.dot(db1_dX) + B1(2), V1.dot(db1_dX), V2.dot(db1_dX);
-        YY << V0.dot(db2_dX) + B2(2), V1.dot(db2_dX), V2.dot(db2_dX);
-        dj_dx << meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(XX), meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(YY), meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(XX), meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(YY);
-        #pragma omp atomic
-        meshes.Quad_Symmetric_grad(v0_index + meshes.V_undeformed.rows(), 2) += de_dJ.dot(dj_dx);
-
-
-        B2_dxyz0 << 2 * e10(2) * e20(0) - e10(0) * e20(2), -e10(1) * e20(2) + 2 * e10(2) * e20(1), -e10(0) * e20(0) - e10(1) * e20(1);
-        B2_dnorm0 = B2_b2.dot(B2_dxyz0) / Norm_B2;
-        db2_dX << ((B2_dxyz0(0) * Norm_B2 - B2_b2(0) * B2_dnorm0) / Norm_B2_2),
-            ((B2_dxyz0(1) * Norm_B2 - B2_b2(1) * B2_dnorm0) / Norm_B2_2),
-            ((B2_dxyz0(2) * Norm_B2 - B2_b2(2) * B2_dnorm0) / Norm_B2_2);
-        db1_dX << -((e10(2) * e10(0)) / Norm_e10_3), -((e10(2) * e10(1)) / Norm_e10_3), -(-(std::pow(e10(0), 2) + std::pow(e10(1), 2)) / Norm_e10_3);
-        XX << V0.dot(db1_dX), V1.dot(db1_dX) + B1(2), V2.dot(db1_dX);
-        YY << V0.dot(db2_dX), V1.dot(db2_dX) + B2(2), V2.dot(db2_dX);
-        dj_dx << meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(XX), meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(YY), meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(XX), meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(YY);
-        #pragma omp atomic
-        meshes.Quad_Symmetric_grad(v1_index + meshes.V_undeformed.rows(), 2) += de_dJ.dot(dj_dx);
-
-        B2_dxyz0 << -e10(0) * e10(2), -e10(2) * e10(1), std::pow(e10(0), 2) + std::pow(e10(1), 2);
-        B2_dnorm0 = B2_b2.dot(B2_dxyz0) / Norm_B2;
-        db2_dX << (B2_dxyz0(0) * Norm_B2 - B2_b2(0) * B2_dnorm0) / Norm_B2_2,
-            (B2_dxyz0(1) * Norm_B2 - B2_b2(1) * B2_dnorm0) / Norm_B2_2,
-            (B2_dxyz0(2) * Norm_B2 - B2_b2(2) * B2_dnorm0) / Norm_B2_2;
-        XX << 0, 0, B1(2);
-        YY << V0.dot(db2_dX), V1.dot(db2_dX), V2.dot(db2_dX) + B2(2);
-        dj_dx << meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(XX), meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(YY), meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(XX), meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(YY);
-        #pragma omp atomic
-        meshes.Quad_Symmetric_grad(v2_index + meshes.V_undeformed.rows(), 2) += de_dJ.dot(dj_dx);
-    }
-    std::cout << "Quad_Symmetric_grad: " << meshes.Quad_Symmetric_grad.norm() << std::endl;
-}
-
-
-
-
-void Compute_Quad_SymmetricDirichlet_sub(Meshes &meshes) 
-{
-    meshes.Quad_Symmetric_C = 0.0;
-    // igl::parallel_for(meshes.F_undeformed.rows(), [&](int i) {
-    #pragma omp parallel for
-    for (int i = 0; i < meshes.F_undeformed.rows(); i++) {
-        int v0_index = meshes.F_undeformed(i, 0);
-		int v1_index = meshes.F_undeformed(i, 1);
-		int v2_index = meshes.F_undeformed(i, 2);
-		Eigen::RowVector3d V0 = meshes.V_undeformed.row(v0_index);
-		Eigen::RowVector3d V1 = meshes.V_undeformed.row(v1_index);
-		Eigen::RowVector3d V2 = meshes.V_undeformed.row(v2_index);
-		Eigen::RowVector3d e10 = V1 - V0;
-		Eigen::RowVector3d e20 = V2 - V0;
-		Eigen::RowVector3d B1 = e10 / e10.norm();
-        Eigen::RowVector3d B2 = B1.cross(e20).cross(B1).normalized();
-		Eigen::RowVector3d Xi;
-        Xi << V0.dot(B1), V1.dot(B1), V2.dot(B1);
-		Eigen::RowVector3d Yi;
-        Yi << V0.dot(B2), V1.dot(B2), V2.dot(B2);
-		//prepare jacobian		
-		const double a = meshes.D1d.row(i).dot(Xi);
-		const double b = meshes.D1d.row(i).dot(Yi);
-		const double c = meshes.D2d.row(i).dot(Xi);
-		const double d = meshes.D2d.row(i).dot(Yi);
-		const double detJ = a * d - b * c;
-		const double detJ2 = detJ * detJ;
-		const double a2 = a * a;
-		const double b2 = b * b;
-		const double c2 = c * c;
-		const double d2 = d * d;
-		double energy = 0.5 * (1 + 1 / detJ2) * (a2 + b2 + c2 + d2);
-        #pragma omp atomic
-		meshes.Quad_Symmetric_C += meshes.restShapeArea(i) * energy;
-    }
-    // },10000);
-
-
-    // igl::parallel_for(meshes.F_deformed.rows(), [&](int i) {
-    #pragma omp parallel for
-    for (int i = 0; i < meshes.F_deformed.rows(); i++) {
-        int v0_index = meshes.F_deformed(i, 0);
-		int v1_index = meshes.F_deformed(i, 1);
-		int v2_index = meshes.F_deformed(i, 2);
-		Eigen::RowVector3d V0 = meshes.V_deformed.row(v0_index);
-		Eigen::RowVector3d V1 = meshes.V_deformed.row(v1_index);
-		Eigen::RowVector3d V2 = meshes.V_deformed.row(v2_index);
-		Eigen::RowVector3d e10 = V1 - V0;
-		Eigen::RowVector3d e20 = V2 - V0;
-		Eigen::RowVector3d B1 = e10 / e10.norm();
-        Eigen::RowVector3d B2 = B1.cross(e20).cross(B1).normalized();
-		Eigen::RowVector3d Xi;
-        Xi << V0.dot(B1), V1.dot(B1), V2.dot(B1);
-		Eigen::RowVector3d Yi;
-        Yi << V0.dot(B2), V1.dot(B2), V2.dot(B2);
-		//prepare jacobian		
-		const double a = meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(Xi);
-		const double b = meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(Yi);
-		const double c = meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(Xi);
-		const double d = meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(Yi);
-		const double detJ = a * d - b * c;
-		const double detJ2 = detJ * detJ;
-		const double a2 = a * a;
-		const double b2 = b * b;
-		const double c2 = c * c;
-		const double d2 = d * d;
-		double energy = 0.5 * (1 + 1 / detJ2) * (a2 + b2 + c2 + d2);
-        #pragma omp atomic
-		meshes.Quad_Symmetric_C += meshes.restShapeArea(i + meshes.F_undeformed.rows()) * energy;
-    }
-    // },10000);
-}
-
-
-void Compute_Quad_derivatives_SymmetricDirichlet_sub(Meshes &meshes)
-{
-	meshes.Quad_Symmetric_grad = Eigen::MatrixXd::Zero(meshes.V_undeformed.rows() + meshes.V_deformed.rows(), 3);
-
-	// igl::parallel_for(meshes.F_undeformed.rows(), [&](int i) {
-        #pragma omp parallel for
-        for (int i = 0; i < meshes.F_undeformed.rows(); i++) {
-            int v0_index = meshes.F_undeformed(i, 0);
-            int v1_index = meshes.F_undeformed(i, 1);
-            int v2_index = meshes.F_undeformed(i, 2);
-            Eigen::RowVector3d V0 = meshes.V_undeformed.row(v0_index);
-            Eigen::RowVector3d V1 = meshes.V_undeformed.row(v1_index);
-            Eigen::RowVector3d V2 = meshes.V_undeformed.row(v2_index);
-            Eigen::RowVector3d e10 = V1 - V0;
-            Eigen::RowVector3d e20 = V2 - V0;
-            Eigen::RowVector3d B1 = e10 / e10.norm();
-            Eigen::RowVector3d B2 = B1.cross(e20).cross(B1).normalized();
-            Eigen::RowVector3d Xi;
-            Xi << V0.dot(B1), V1.dot(B1), V2.dot(B1);
-            Eigen::RowVector3d Yi;
-            Yi << V0.dot(B2), V1.dot(B2), V2.dot(B2);
-            //prepare jacobian		
-            const double a = meshes.D1d.row(i).dot(Xi);
-            const double b = meshes.D1d.row(i).dot(Yi);
-            const double c = meshes.D2d.row(i).dot(Xi);
-            const double d = meshes.D2d.row(i).dot(Yi);
-            const double detJ = a * d - b * c;
-            const double det2 = detJ * detJ;
-            const double a2 = a * a;
-            const double b2 = b * b;
-            const double c2 = c * c;
-            const double d2 = d * d;
-            const double det3 = std::pow(detJ, 3);
-            const double Fnorm = a2 + b2 + c2 + d2;
-    
-            Eigen::VectorXd de_dJ(4);
-            de_dJ <<
-                meshes.restShapeArea(i) * (a + a / det2 - d * Fnorm / det3),
-                meshes.restShapeArea(i) * (b + b / det2 + c * Fnorm / det3),
-                meshes.restShapeArea(i) * (c + c / det2 + b * Fnorm / det3),
-                meshes.restShapeArea(i) * (d + d / det2 - a * Fnorm / det3);
-            double Norm_e10_3 = std::pow(e10.norm(), 3);
-            Eigen::RowVector3d B2_b2 = e10.cross(e20).cross(e10);
-            double Norm_B2 = B2_b2.norm();
-            double Norm_B2_2 = pow(Norm_B2, 2);
-            Eigen::RowVector3d B2_dxyz0, B2_dxyz1;
-            double B2_dnorm0, B2_dnorm1;
-            Eigen::RowVector3d db1_dX, db2_dX, XX, YY;
-            
-            B2_dxyz0 << -e10(1) * e20(1) - e10(2) * e20(2), 2 * e10(0) * e20(1) - e10(1) * e20(0), -e10(2) * e20(0) + 2 * e10(0) * e20(2);
-            B2_dxyz1 << std::pow(e10(1), 2) + std::pow(e10(2), 2), -e10(0) * e10(1), -e10(0) * e10(2);
-            B2_dnorm0 = B2_b2.dot(B2_dxyz0) / Norm_B2;
-            B2_dnorm1 = B2_b2.dot(B2_dxyz1) / Norm_B2;
-            db2_dX << -(B2_dxyz0(0) * Norm_B2 - B2_b2(0) * B2_dnorm0) / Norm_B2_2 - (B2_dxyz1(0) * Norm_B2 - B2_b2(0) * B2_dnorm1) / Norm_B2_2,
-                -(B2_dxyz0(1) * Norm_B2 - B2_b2(1) * B2_dnorm0) / Norm_B2_2 - (B2_dxyz1(1) * Norm_B2 - B2_b2(1) * B2_dnorm1) / Norm_B2_2,
-                -(B2_dxyz0(2) * Norm_B2 - B2_b2(2) * B2_dnorm0) / Norm_B2_2 - (B2_dxyz1(2) * Norm_B2 - B2_b2(2) * B2_dnorm1) / Norm_B2_2;
-            db1_dX << -(std::pow(e10(1), 2) + std::pow(e10(2), 2)) / Norm_e10_3, (e10(1) * e10(0)) / Norm_e10_3, (e10(2) * e10(0)) / Norm_e10_3;
-            XX << V0.dot(db1_dX) + B1(0), V1.dot(db1_dX), V2.dot(db1_dX);
-            YY << V0.dot(db2_dX) + B2(0), V1.dot(db2_dX), V2.dot(db2_dX);
-            Eigen::VectorXd dj_dx(4);
-            dj_dx << meshes.D1d.row(i).dot(XX), meshes.D1d.row(i).dot(YY), meshes.D2d.row(i).dot(XX), meshes.D2d.row(i).dot(YY);
-            #pragma omp atomic
-            meshes.Quad_Symmetric_grad(v0_index, 0) += de_dJ.dot(dj_dx);
-    
-            B2_dxyz0 << -e10(1) * e20(1) - e10(2) * e20(2), 2 * e10(0) * e20(1) - e10(1) * e20(0), -e10(2) * e20(0) + 2 * e10(0) * e20(2);
-            B2_dnorm0 = B2_b2.dot(B2_dxyz0) / Norm_B2;
-    
-            db2_dX << 
-                (B2_dxyz0(0) * Norm_B2 - B2_b2(0) * B2_dnorm0) / Norm_B2_2,
-                (B2_dxyz0(1) * Norm_B2 - B2_b2(1) * B2_dnorm0) / Norm_B2_2,
-                (B2_dxyz0(2) * Norm_B2 - B2_b2(2) * B2_dnorm0) / Norm_B2_2;
-            db1_dX << -(-(std::pow(e10(1), 2) + std::pow(e10(2), 2)) / Norm_e10_3), -((e10(1) * e10(0)) / Norm_e10_3), -((e10(2) * e10(0)) / Norm_e10_3);
-            XX << V0.dot(db1_dX), V1.dot(db1_dX) + B1(0), V2.dot(db1_dX);
-            YY << V0.dot(db2_dX), V1.dot(db2_dX) + B2(0), V2.dot(db2_dX);
-            dj_dx << meshes.D1d.row(i).dot(XX), meshes.D1d.row(i).dot(YY), meshes.D2d.row(i).dot(XX), meshes.D2d.row(i).dot(YY);
-            #pragma omp atomic
-            meshes.Quad_Symmetric_grad(v1_index, 0) += de_dJ.dot(dj_dx);
-    
-            B2_dxyz0 << std::pow(e10(1), 2) + std::pow(e10(2), 2), -e10(0) * e10(1), -e10(0) * e10(2);
-            B2_dnorm0 = B2_b2.dot(B2_dxyz0) / Norm_B2;
-            db2_dX << B2_dxyz0(0) * Norm_B2 - B2_b2(0) * B2_dnorm0 / Norm_B2_2,
-                B2_dxyz0(1) * Norm_B2 - B2_b2(1) * B2_dnorm0 / Norm_B2_2,
-                B2_dxyz0(2) * Norm_B2 - B2_b2(2) * B2_dnorm0 / Norm_B2_2;
-            XX << 0, 0, B1(0);
-            YY << V0.dot(db2_dX), V1.dot(db2_dX), V2.dot(db2_dX) + B2(0);
-            dj_dx << meshes.D1d.row(i).dot(XX), meshes.D1d.row(i).dot(YY), meshes.D2d.row(i).dot(XX), meshes.D2d.row(i).dot(YY);
-            #pragma omp atomic
-            meshes.Quad_Symmetric_grad(v2_index, 0) += de_dJ.dot(dj_dx);
-    
-    
-            B2_dxyz0 << -e10(1) * e20(1) + 2 * e10(1) * e20(0), -e10(2) * e20(2) - e20(0) * e10(0), 2 * e10(1) * e20(2) - e10(2) * e20(1);
-            B2_dxyz1 << -e10(1) * e10(0), std::pow(e10(2), 2) + std::pow(e10(0), 2), -e10(2) * e10(1);
-            B2_dnorm0 = B2_b2.dot(B2_dxyz0) / Norm_B2;
-            B2_dnorm1 = B2_b2.dot(B2_dxyz1) / Norm_B2;
-            db2_dX << -((B2_dxyz0(0) * Norm_B2 - B2_b2(0) * B2_dnorm0) / Norm_B2_2) - ((B2_dxyz1(0) * Norm_B2 - B2_b2(0) * B2_dnorm1) / Norm_B2_2),
-                -((B2_dxyz0(1) * Norm_B2 - B2_b2(1) * B2_dnorm0) / Norm_B2_2) - ((B2_dxyz1(1) * Norm_B2 - B2_b2(1) * B2_dnorm1) / Norm_B2_2),
-                -((B2_dxyz0(2) * Norm_B2 - B2_b2(2) * B2_dnorm0) / Norm_B2_2) - ((B2_dxyz1(2) * Norm_B2 - B2_b2(2) * B2_dnorm1) / Norm_B2_2);
-            db1_dX << ((e10(1) * e10(0)) / Norm_e10_3), (-(std::pow(e10(0), 2) + std::pow(e10(2), 2)) / Norm_e10_3), ((e10(2) * e10(1)) / Norm_e10_3);
-            XX << V0.dot(db1_dX) + B1(1), V1.dot(db1_dX), V2.dot(db1_dX);
-            YY << V0.dot(db2_dX) + B2(1), V1.dot(db2_dX), V2.dot(db2_dX);
-            dj_dx << meshes.D1d.row(i).dot(XX), meshes.D1d.row(i).dot(YY), meshes.D2d.row(i).dot(XX), meshes.D2d.row(i).dot(YY);
-            #pragma omp atomic
-            meshes.Quad_Symmetric_grad(v0_index, 1) += de_dJ.dot(dj_dx);
-    
-    
-            B2_dxyz0 << -e10(0) * e20(1) + 2 * e10(1) * e20(0), -e10(2) * e20(2) - e20(0) * e10(0), 2 * e10(1) * e20(2) - e10(2) * e20(1);
-            B2_dnorm0 = B2_b2.dot(B2_dxyz0) / Norm_B2;
-            db2_dX << ((B2_dxyz0(0) * Norm_B2 - B2_b2(0) * B2_dnorm0) / Norm_B2_2),
-                ((B2_dxyz0(1) * Norm_B2 - B2_b2(1) * B2_dnorm0) / Norm_B2_2),
-                ((B2_dxyz0(2) * Norm_B2 - B2_b2(2) * B2_dnorm0) / Norm_B2_2);
-            db1_dX << -((e10(1) * e10(0)) / Norm_e10_3), -(-(pow(e10(0), 2) + pow(e10(2), 2)) / Norm_e10_3), -((e10(2) * e10(1)) / Norm_e10_3);
-            XX << V0.dot(db1_dX), V1.dot(db1_dX) + B1(1), V2.dot(db1_dX);
-            YY << V0.dot(db2_dX), V1.dot(db2_dX) + B2(1), V2.dot(db2_dX);
-            dj_dx << meshes.D1d.row(i).dot(XX), meshes.D1d.row(i).dot(YY), meshes.D2d.row(i).dot(XX), meshes.D2d.row(i).dot(YY);
-            #pragma omp atomic
-            meshes.Quad_Symmetric_grad(v1_index, 1) += de_dJ.dot(dj_dx);
-    
-    
-            B2_dxyz0 << -e10(1) * e10(0), std::pow(e10(2), 2) + std::pow(e10(0), 2), -e10(2) * e10(1);
-            B2_dnorm0 = B2_b2.dot(B2_dxyz0) / Norm_B2;
-            db2_dX << (B2_dxyz0(0) * Norm_B2 - B2_b2(0) * B2_dnorm0) / Norm_B2_2,
-                (B2_dxyz0(1) * Norm_B2 - B2_b2(1) * B2_dnorm0) / Norm_B2_2,
-                (B2_dxyz0(2) * Norm_B2 - B2_b2(2) * B2_dnorm0) / Norm_B2_2;
-            XX << 0, 0, B1(1);
-            YY << V0.dot(db2_dX), V1.dot(db2_dX), V2.dot(db2_dX) + B2(1);
-            dj_dx << meshes.D1d.row(i).dot(XX), meshes.D1d.row(i).dot(YY), meshes.D2d.row(i).dot(XX), meshes.D2d.row(i).dot(YY);
-            #pragma omp atomic
-            meshes.Quad_Symmetric_grad(v2_index, 1) += de_dJ.dot(dj_dx);
-    
-    
-            B2_dxyz0 << 2 * e10(2) * e20(0) - e10(0) * e20(2), -e10(1) * e20(2) + 2 * e10(2) * e20(1), -e10(0) * e20(0) - e10(1) * e20(1);
-            B2_dxyz1 << -e10(0) * e10(2), -e10(2) * e10(1), std::pow(e10(0), 2) + std::pow(e10(1), 2);
-            B2_dnorm0 = B2_b2.dot(B2_dxyz0) / Norm_B2;
-            B2_dnorm1 = B2_b2.dot(B2_dxyz1) / Norm_B2;
-            db2_dX << -((B2_dxyz0(0) * Norm_B2 - B2_b2(0) * B2_dnorm0) / Norm_B2_2) - ((B2_dxyz1(0) * Norm_B2 - B2_b2(0) * B2_dnorm1) / Norm_B2_2),
-                -((B2_dxyz0(1) * Norm_B2 - B2_b2(1) * B2_dnorm0) / Norm_B2_2) - ((B2_dxyz1(1) * Norm_B2 - B2_b2(1) * B2_dnorm1) / Norm_B2_2),
-                -((B2_dxyz0(2) * Norm_B2 - B2_b2(2) * B2_dnorm0) / Norm_B2_2) - ((B2_dxyz1(2) * Norm_B2 - B2_b2(2) * B2_dnorm1) / Norm_B2_2);
-            db1_dX << ((e10(2) * e10(0)) / Norm_e10_3), ((e10(2) * e10(1)) / Norm_e10_3), (-(pow(e10(0), 2) + pow(e10(1), 2)) / Norm_e10_3);
-            XX << V0.dot(db1_dX) + B1(2), V1.dot(db1_dX), V2.dot(db1_dX);
-            YY << V0.dot(db2_dX) + B2(2), V1.dot(db2_dX), V2.dot(db2_dX);
-            dj_dx << meshes.D1d.row(i).dot(XX), meshes.D1d.row(i).dot(YY), meshes.D2d.row(i).dot(XX), meshes.D2d.row(i).dot(YY);
-            #pragma omp atomic
-            meshes.Quad_Symmetric_grad(v0_index, 2) += de_dJ.dot(dj_dx);
-    
-    
-            B2_dxyz0 << 2 * e10(2) * e20(0) - e10(0) * e20(2), -e10(1) * e20(2) + 2 * e10(2) * e20(1), -e10(0) * e20(0) - e10(1) * e20(1);
-            B2_dnorm0 = B2_b2.dot(B2_dxyz0) / Norm_B2;
-            db2_dX << ((B2_dxyz0(0) * Norm_B2 - B2_b2(0) * B2_dnorm0) / Norm_B2_2),
-                ((B2_dxyz0(1) * Norm_B2 - B2_b2(1) * B2_dnorm0) / Norm_B2_2),
-                ((B2_dxyz0(2) * Norm_B2 - B2_b2(2) * B2_dnorm0) / Norm_B2_2);
-            db1_dX << -((e10(2) * e10(0)) / Norm_e10_3), -((e10(2) * e10(1)) / Norm_e10_3), -(-(std::pow(e10(0), 2) + std::pow(e10(1), 2)) / Norm_e10_3);
-            XX << V0.dot(db1_dX), V1.dot(db1_dX) + B1(2), V2.dot(db1_dX);
-            YY << V0.dot(db2_dX), V1.dot(db2_dX) + B2(2), V2.dot(db2_dX);
-            dj_dx << meshes.D1d.row(i).dot(XX), meshes.D1d.row(i).dot(YY), meshes.D2d.row(i).dot(XX), meshes.D2d.row(i).dot(YY);
-            #pragma omp atomic
-            meshes.Quad_Symmetric_grad(v1_index, 2) += de_dJ.dot(dj_dx);
-    
-            B2_dxyz0 << -e10(0) * e10(2), -e10(2) * e10(1), std::pow(e10(0), 2) + std::pow(e10(1), 2);
-            B2_dnorm0 = B2_b2.dot(B2_dxyz0) / Norm_B2;
-            db2_dX << (B2_dxyz0(0) * Norm_B2 - B2_b2(0) * B2_dnorm0) / Norm_B2_2,
-                (B2_dxyz0(1) * Norm_B2 - B2_b2(1) * B2_dnorm0) / Norm_B2_2,
-                (B2_dxyz0(2) * Norm_B2 - B2_b2(2) * B2_dnorm0) / Norm_B2_2;
-            XX << 0, 0, B1(2);
-            YY << V0.dot(db2_dX), V1.dot(db2_dX), V2.dot(db2_dX) + B2(2);
-            dj_dx << meshes.D1d.row(i).dot(XX), meshes.D1d.row(i).dot(YY), meshes.D2d.row(i).dot(XX), meshes.D2d.row(i).dot(YY);
-            #pragma omp atomic
-            meshes.Quad_Symmetric_grad(v2_index, 2) += de_dJ.dot(dj_dx);
-        }
-	// },10000);
-
-
-
-    // igl::parallel_for(meshes.F_deformed.rows(), [&](int i) {
-    #pragma omp parallel for
-    for (int i = 0; i < meshes.F_deformed.rows(); i++) {
-		int v0_index = meshes.F_deformed(i, 0);
-		int v1_index = meshes.F_deformed(i, 1);
-		int v2_index = meshes.F_deformed(i, 2);
-		Eigen::RowVector3d V0 = meshes.V_deformed.row(v0_index);
-		Eigen::RowVector3d V1 = meshes.V_deformed.row(v1_index);
-		Eigen::RowVector3d V2 = meshes.V_deformed.row(v2_index);
-		Eigen::RowVector3d e10 = V1 - V0;
-		Eigen::RowVector3d e20 = V2 - V0;
-		Eigen::RowVector3d B1 = e10 / e10.norm();
-        Eigen::RowVector3d B2 = B1.cross(e20).cross(B1).normalized();
-		Eigen::RowVector3d Xi;
-        Xi << V0.dot(B1), V1.dot(B1), V2.dot(B1);
-		Eigen::RowVector3d Yi;
-        Yi << V0.dot(B2), V1.dot(B2), V2.dot(B2);
-		//prepare jacobian		
 		const double a = meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(Xi);
 		const double b = meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(Yi);
 		const double c = meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(Xi);
@@ -912,6 +484,9 @@ void Compute_Quad_derivatives_SymmetricDirichlet_sub(Meshes &meshes)
         meshes.Quad_Symmetric_grad(v2_index + meshes.V_undeformed.rows(), 2) += de_dJ.dot(dj_dx);
     }
 }
+
+
+
 
 
 autodiff::dual2nd Compute_SymmetricDirichlet(const autodiff::ArrayXdual2nd& x, const autodiff::ArrayXdual2nd& d1d, const autodiff::ArrayXdual2nd& d2d, const autodiff::dual2nd &area, const autodiff::dual2nd &weight) 
@@ -974,7 +549,7 @@ void Compute_Newton_SymmetricDirichlet(Meshes &meshes)
 {
     meshes.energy_Symmetric = 0;
     meshes.C_Symmetric = Eigen::VectorXd::Zero(meshes.V_undeformed.rows()*3 + meshes.V_deformed.rows() * 3);
-    // igl::parallel_for(meshes.uE.rows(), [&](int i) {
+
     #pragma omp parallel for
     for (int i = 0; i < meshes.F_undeformed.rows(); i++) {
         autodiff::ArrayXdual2nd x(9);
@@ -1171,76 +746,3 @@ void Compute_Newton_derivatives_SymmetricDirichlet(Meshes &meshes)
     }
 }
 
-
-// void Compute_Quad_SymmetricDirichlet(Meshes &meshes) 
-// {
-//     meshes.Quad_Symmetric_C = 0.0;
-//     // igl::parallel_for(meshes.F_undeformed.rows(), [&](int i) {
-//     #pragma omp parallel for
-//     for (int i = 0; i < meshes.F_undeformed.rows(); i++) {
-//         int v0_index = meshes.F_undeformed(i, 0);
-// 		int v1_index = meshes.F_undeformed(i, 1);
-// 		int v2_index = meshes.F_undeformed(i, 2);
-// 		Eigen::RowVector3d V0 = meshes.V_undeformed.row(v0_index);
-// 		Eigen::RowVector3d V1 = meshes.V_undeformed.row(v1_index);
-// 		Eigen::RowVector3d V2 = meshes.V_undeformed.row(v2_index);
-// 		Eigen::RowVector3d e10 = V1 - V0;
-// 		Eigen::RowVector3d e20 = V2 - V0;
-// 		Eigen::RowVector3d B1 = e10 / e10.norm();
-//         Eigen::RowVector3d B2 = B1.cross(e20).cross(B1).normalized();
-// 		Eigen::RowVector3d Xi;
-//         Xi << V0.dot(B1), V1.dot(B1), V2.dot(B1);
-// 		Eigen::RowVector3d Yi;
-//         Yi << V0.dot(B2), V1.dot(B2), V2.dot(B2);
-// 		//prepare jacobian		
-// 		const double a = meshes.D1d.row(i).dot(Xi);
-// 		const double b = meshes.D1d.row(i).dot(Yi);
-// 		const double c = meshes.D2d.row(i).dot(Xi);
-// 		const double d = meshes.D2d.row(i).dot(Yi);
-// 		const double detJ = a * d - b * c;
-// 		const double detJ2 = detJ * detJ;
-// 		const double a2 = a * a;
-// 		const double b2 = b * b;
-// 		const double c2 = c * c;
-// 		const double d2 = d * d;
-// 		double energy = 0.5 * (1 + 1 / detJ2) * (a2 + b2 + c2 + d2);
-//         #pragma omp atomic
-// 		meshes.Quad_Symmetric_C += meshes.restShapeArea(i) * energy;
-//     }
-//     // },10000);
-
-
-//     // igl::parallel_for(meshes.F_deformed.rows(), [&](int i) {
-//     #pragma omp parallel for
-//     for (int i = 0; i < meshes.F_deformed.rows(); i++) {
-//         int v0_index = meshes.F_deformed(i, 0);
-// 		int v1_index = meshes.F_deformed(i, 1);
-// 		int v2_index = meshes.F_deformed(i, 2);
-// 		Eigen::RowVector3d V0 = meshes.V_deformed.row(v0_index);
-// 		Eigen::RowVector3d V1 = meshes.V_deformed.row(v1_index);
-// 		Eigen::RowVector3d V2 = meshes.V_deformed.row(v2_index);
-// 		Eigen::RowVector3d e10 = V1 - V0;
-// 		Eigen::RowVector3d e20 = V2 - V0;
-// 		Eigen::RowVector3d B1 = e10 / e10.norm();
-//         Eigen::RowVector3d B2 = B1.cross(e20).cross(B1).normalized();
-// 		Eigen::RowVector3d Xi;
-//         Xi << V0.dot(B1), V1.dot(B1), V2.dot(B1);
-// 		Eigen::RowVector3d Yi;
-//         Yi << V0.dot(B2), V1.dot(B2), V2.dot(B2);
-// 		//prepare jacobian		
-// 		const double a = meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(Xi);
-// 		const double b = meshes.D1d.row(i + meshes.F_undeformed.rows()).dot(Yi);
-// 		const double c = meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(Xi);
-// 		const double d = meshes.D2d.row(i + meshes.F_undeformed.rows()).dot(Yi);
-// 		const double detJ = a * d - b * c;
-// 		const double detJ2 = detJ * detJ;
-// 		const double a2 = a * a;
-// 		const double b2 = b * b;
-// 		const double c2 = c * c;
-// 		const double d2 = d * d;
-// 		double energy = 0.5 * (1 + 1 / detJ2) * (a2 + b2 + c2 + d2);
-//         #pragma omp atomic
-// 		meshes.Quad_Symmetric_C += meshes.restShapeArea(i + meshes.F_undeformed.rows()) * energy;
-//     }
-//     // },10000);
-// }

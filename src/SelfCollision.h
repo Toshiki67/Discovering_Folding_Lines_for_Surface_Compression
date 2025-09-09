@@ -50,15 +50,14 @@ void Compute_SelfCollisionImpulse_CCD(std::vector<std::vector<int>> &self_collis
     Meshes &meshes);
 
 void MakeRigidImpactZone
-    (std::vector< std::set<int> >& aRIZ, // (in,ou)RIZに属する節点のインデックスの集合の配列
-     const std::vector<std::vector<int>>& aContactElem, // 自己交差する接触要素の配列
+    (std::vector< std::set<int> >& aRIZ,
+     const std::vector<std::vector<int>>& aContactElem,
      const std::vector<std::vector<int>>& aEdge);
 void CalcInvMat3(double ainv[], const double a[]);
 void ApplyRigidImpactZone
-(Eigen::MatrixXd& aUVWm, // (in,out)RIZで更新された中間速度
- ////
- const std::vector< std::set<int> >& aRIZ,  // (in)各RIZに属する節点の集合(set)の配列
- const Eigen::MatrixXd& aXYZ, // (in) 前ステップの節点の位置の配列
+(Eigen::MatrixXd& aUVWm,
+ const std::vector< std::set<int> >& aRIZ,  
+ const Eigen::MatrixXd& aXYZ, 
  const Eigen::MatrixXd& aUVWm0);
  void GetIntermidiateVelocityContactResolved(Meshes &meshes);
 #endif FREEFORM_SELFCOLLISION_H

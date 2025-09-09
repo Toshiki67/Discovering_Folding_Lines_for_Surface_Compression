@@ -1,7 +1,3 @@
-//
-// Created by 青木俊樹 on 4/11/24.
-//
-
 #ifndef FREEFORM_BOUNDARY_H
 #define FREEFORM_BOUNDARY_H
 
@@ -13,9 +9,6 @@ void closest_point_line(const Eigen::Vector3d &p, const Eigen::Vector3d &p1, con
                         Eigen::Vector3d &closest, double &distance);
 
 void initializeBoundary(Meshes &meshes);
-
-void Compute_Boundary_Constraints(Meshes &meshes);
-void Compute_derivatives_Boundary_Constraints(Meshes &meshes);
 
 void Compute_Quad_Boundary_Constraints(Meshes &meshes);
 void Compute_Quad_derivatives_Boundary_Constraints(Meshes &meshes);

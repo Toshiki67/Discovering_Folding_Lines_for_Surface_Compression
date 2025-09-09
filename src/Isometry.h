@@ -1,7 +1,3 @@
-//
-// Created by 青木俊樹 on 4/10/24.
-//
-
 #ifndef FREEFORM_ISOMETRY_H
 #define FREEFORM_ISOMETRY_H
 
@@ -11,10 +7,6 @@
 
 #include <autodiff/forward/dual.hpp>
 #include <autodiff/forward/dual/eigen.hpp>
-
-void Compute_Isometry(Meshes &meshes);
-
-void Compute_derivatives_Isometry(Meshes &meshes);
 
 void Compute_Quad_Isometry(Meshes &meshes);
 

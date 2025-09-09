@@ -1,7 +1,3 @@
-//
-// Created by 青木俊樹 on 4/10/24.
-//
-
 #include "EdgeFlip.h"
 #include <cmath>
 #include <iostream>
@@ -29,13 +25,12 @@ void Compute_EdgeFlip(Meshes &meshes){
         {
         Eigen::RowVector3d v1 = (x-y).normalized();
         Eigen::RowVector3d v2 = (z-y).normalized();
-        // http://stackoverflow.com/questions/10133957/signed-angle-between-two-vectors-without-a-reference-plane
         double s = v1.cross(v2).norm();
         double c = v1.dot(v2);
         return atan2(s, c);
     };
     
-    // visit each edge and if two angles are less than 10 degree, flip the edge
+
     for (int i = 0; i < meshes.uE.rows(); i++) {
         Eigen::Vector2i face = meshes.EF.row(i);
         int face1 = face(0);
@@ -43,7 +38,7 @@ void Compute_EdgeFlip(Meshes &meshes){
         if (face2 == -1 || face1 == -1) {
             continue;
         }
-        // get the angles
+
         double angle1_f1 = angles(face1, (meshes.EI(i, 0) + 1) % 3);
         double angle2_f1 = angles(face1, (meshes.EI(i, 0) + 2) % 3);
         double angle1_f2 = angles(face2, (meshes.EI(i, 1) + 1) % 3);
@@ -134,11 +129,9 @@ Eigen::Vector3d normal(const Eigen::Vector3d &p0, const Eigen::Vector3d &p1, con
     const Eigen::Vector3d n2 = (p0 - p2).cross(p1 - p2);
     Eigen::Vector3d N;
 
-    // careful sum
     for(int d = 0;d<3;d++)
     {
-      // This is a little _silly_ in terms of complexity, but its recursive
-      // implementation is clean looking...
+
       const std::function<double(double,double,double)> sum3 =
         [&sum3](double a, double b, double c)->double
       {
@@ -208,7 +201,6 @@ void Fold_EdgeFlip_no_intersections(Meshes &meshes){
             }
         }
         if (is_fold) {
-            std::cout << "Flip" << i << "th edge" << std::endl;
             std::vector<int> half_edges = meshes.uE2E[i];
             const size_t num_faces = meshes.F_undeformed.rows();
             const size_t f1 = half_edges[0] % num_faces;
@@ -272,7 +264,6 @@ void Fold_EdgeFlip_no_intersections(Meshes &meshes){
             Eigen::MatrixXi IF,EE;
             Eigen::Array<bool,Eigen::Dynamic,1> CP;
             igl::predicates::find_self_intersections(meshes.V_deformed,meshes.F_undeformed,IF,CP,EV,EE,EI);
-            std::cout << "Edge Flip intersection:" << IF.rows() << std::endl;
             if (IF.rows() != 0)
                 meshes = mesh_sub;
             else
@@ -291,7 +282,6 @@ void Fold_EdgeFlip(Meshes &meshes){
     Eigen::MatrixXi IF,EE;
     Eigen::Array<bool,Eigen::Dynamic,1> CP;
     igl::predicates::find_self_intersections(meshes.V_deformed,meshes.F_deformed,IF,CP,EV,EE,EI);
-    std::cout << "Edge Flip intersection:" << IF.rows() << std::endl;
     for (int i = 0; i < meshes.uE.rows(); i++) {
         if (meshes.Quad_Angle_sub_Vector(i) == 0)
             continue;
@@ -334,7 +324,6 @@ void Fold_EdgeFlip(Meshes &meshes){
             }
         }
         if (is_fold) {
-            std::cout << "Flip" << i << "th edge" << std::endl;
             std::vector<int> half_edges = meshes.uE2E[i];
             const size_t num_faces = meshes.F_undeformed.rows();
             const size_t f1 = half_edges[0] % num_faces;
@@ -397,12 +386,7 @@ void Fold_EdgeFlip(Meshes &meshes){
 
     }
     meshes.F_deformed = meshes.F_undeformed;
-    // Eigen::VectorXi EI;
-    // Eigen::MatrixXd EV;
-    // Eigen::MatrixXi IF,EE;
-    // Eigen::Array<bool,Eigen::Dynamic,1> CP;
     igl::predicates::find_self_intersections(meshes.V_deformed,meshes.F_deformed,IF,CP,EV,EE,EI);
-    std::cout << "Edge Flip intersection:" << IF.rows() << std::endl;
     if (IF.rows() == 0){
         return;
     }
@@ -413,6 +397,5 @@ void Fold_EdgeFlip(Meshes &meshes){
     Eigen::MatrixXi IF_,EE_;
     Eigen::Array<bool,Eigen::Dynamic,1> CP_;
     igl::predicates::find_self_intersections(meshes.V_deformed,meshes.F_deformed,IF_,CP_,EV_,EE_,EI_);
-    std::cout << "Edge Flip intersection:" << IF_.rows() << std::endl;
 }
 

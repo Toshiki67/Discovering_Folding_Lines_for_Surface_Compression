@@ -13,11 +13,6 @@ void computeSurfaceGradientPerFace(const Eigen::MatrixXd &V, const Eigen::Matrix
 void Compute_Quad_SymmetricDirichlet(Meshes &meshes);
 void Compute_Quad_derivatives_SymmetricDirichlet(Meshes &meshes);
 
-void Compute_Quad_SymmetricDirichlet_sub(Meshes &meshes);
-void Compute_Quad_derivatives_SymmetricDirichlet_sub(Meshes &meshes);
-// struct Params_SymmetricDirichlet {
-    
-// };
 
 autodiff::dual2nd Compute_SymmetricDirichlet(const autodiff::ArrayXdual2nd& x, const autodiff::ArrayXdual2nd& d1d, const autodiff::ArrayXdual2nd& d2d, const autodiff::dual2nd &area, const autodiff::dual2nd &weight);
 int choose(int num, int v1, int v2, int v3);
