@@ -10,19 +10,6 @@
 #include <igl/edges.h>
 #include <igl/writeOBJ.h>
 
-void matrix_to_vector(const Eigen::MatrixXd &V, Eigen::VectorXd &x) {
-    Eigen::MatrixXd V_t = V.transpose();
-    x = Eigen::VectorXd(Eigen::Map<Eigen::VectorXd> (V_t.data(), V_t.size()));
-}
-
-void two_matrix_to_vector(const Eigen::MatrixXd &V1, const Eigen::MatrixXd &V2, Eigen::VectorXd &x) {
-    Eigen::VectorXd x1;
-    matrix_to_vector(V1, x1);
-    Eigen::VectorXd x2;
-    matrix_to_vector(V2, x2);
-    x.resize(x1.size() + x2.size());
-    x << x1, x2;
-}
 
 
 
