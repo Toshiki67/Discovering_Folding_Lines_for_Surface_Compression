@@ -23,7 +23,7 @@ python mpm.py ../model/bunny.obj
 ```
 And press continue button.
 **Run FLE**
-If you would like to run the FLE code and visualization code, you need to build.
+If you would like to run the Folding Line Extraction(FLE) code and visualization code, you need to build.
 ```
 mkdir build
 cd build
