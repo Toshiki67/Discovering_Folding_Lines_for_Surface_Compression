@@ -521,7 +521,6 @@ def main():
         file.writeObj_csv(C, iteration)
         x_np = F_x.to_numpy()
         dm_np = F_dm.to_numpy()
-        file.writeParticle(x_np, dm_np, iteration)
 
 
     while window.running:
@@ -545,8 +544,6 @@ def main():
                 file.writeObj_csv(C, iteration)
                 x_np = F_x.to_numpy()
                 dm_np = F_dm.to_numpy()
-                file.writeParticle(x_np, dm_np, iteration)
-                file.write_time(time.time() - time_start, iteration)
 
 
         render()

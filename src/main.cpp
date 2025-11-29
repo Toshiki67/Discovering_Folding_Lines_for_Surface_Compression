@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
         for (int num = 0; num < max_iteration*10; num++){    
                 Minimize(meshes, 100);
                 // Minimize(meshes, 10);
-                save_iteration = save_iteration + 10;
+                save_iteration = save_iteration + 100;
                 if (save_iteration % 100 == 0){
                     meshes.Vel = meshes.V_deformed - meshes.V_deformed_pre;
                     Compute_SelfCollision(meshes);
@@ -208,9 +208,9 @@ int main(int argc, char *argv[]) {
                     EdgeCollapse(meshes);
                     meshes.V_deformed_pre = meshes.V_deformed;   
                 }
-                if (save_iteration % 10 == 0) {
-                    // igl::writeOBJ(folder + "/deformed_" + std::to_string(save_iteration/10) + ".obj", meshes.V_deformed, meshes.F_deformed);
-                    // igl::writeOBJ(folder + "/undeformed_" + std::to_string(save_iteration/10) + ".obj", meshes.V_undeformed, meshes.F_undeformed);
+                if (save_iteration % 10000 == 0) {
+                    igl::writeOBJ(folder + "/deformed_" + std::to_string(save_iteration) + ".obj", meshes.V_deformed, meshes.F_deformed);
+                    igl::writeOBJ(folder + "/undeformed_" + std::to_string(save_iteration) + ".obj", meshes.V_undeformed, meshes.F_undeformed);
                     std::ofstream file_undeformed(folder + "/undeformed_" + std::to_string(save_iteration) + ".txt");
                     if (file_undeformed.is_open()) {
                         file_undeformed << meshes.N_undeformed_opt << std::endl;
@@ -229,7 +229,6 @@ int main(int argc, char *argv[]) {
                     file_deformed.close();
                 }
                 std::cout << "iteration: " << save_iteration << std::endl;
-                std::cout << "Energy: " << std::endl;
             }
       }
     }

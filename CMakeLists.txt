@@ -111,10 +111,3 @@ add_executable(visualization src/Visualization.cpp
         src/Uniform.h
         src/data.h)
 target_link_libraries(visualization PUBLIC igl::glfw igl::imgui igl::glfw igl::stb igl_copyleft::cgal igl::predicates OpenMP::OpenMP_CXX autodiff::autodiff)
-
-add_executable(collision
-        src/test_collision.cpp
-        src/SelfCollision.cpp
-        src/SelfCollision.h
-        src/data.h)
-target_link_libraries(collision PUBLIC igl::glfw igl::imgui igl::glfw igl::stb igl_copyleft::cgal igl::predicates OpenMP::OpenMP_CXX autodiff::autodiff)
