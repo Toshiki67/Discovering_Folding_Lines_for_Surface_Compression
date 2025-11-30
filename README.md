@@ -1,5 +1,6 @@
 # Discovering Folding Lines for Surface Compression
 This is the code of the SIGGRAPH paper "Discovering Folding Lines for Surface Compression"
+[Website](https://sites.google.com/view/discovering-folding-lines)
 
 ![image](images/teaser.jpg)
 ## Installation
@@ -22,6 +23,7 @@ python mpm.py <your file path>
 python mpm.py ../model/bunny.obj
 ```
 And press continue button.
+
 **Run FLE**
 If you would like to run the Folding Line Extraction(FLE) code and visualization code, you need to build.
 ```
@@ -30,7 +32,7 @@ cd build
 cmake ..
 make -j8
 ```
-In order to run Folding Line Extraction(FLE),
+In order to run FLE,
 ```
 ./FLE -u <undeformed mesh file path> -r <reference mesh file path> -d <deformed mesh file path> -s <delta value, 6 means 1e-6>
 // for example
