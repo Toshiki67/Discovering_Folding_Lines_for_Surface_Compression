@@ -37,7 +37,7 @@ In order to run FLE,
 ```
 ./FLE -u <undeformed mesh file path> -r <reference mesh file path> -d <deformed mesh file path> -s <delta value, 6 means 1e-6>
 // for example
-/FLE -u ../results/bunny_1/0.obj -r ../results/bunny_1/0.obj -d ../results/bunny_1/280.obj -s 6
+./FLE -u ../results/bunny_1/0.obj -r ../results/bunny_1/0.obj -d ../results/bunny_1/280.obj -s 6
 ```
 With this FLE, the code automatically make a folder that store the result with iteration number. For example, deformed_1000.obj, undeformed_1000.obj.
 After FLE, if you want to visualize the result,
