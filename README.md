@@ -1,6 +1,7 @@
 # Discovering Folding Lines for Surface Compression
 This is the code of the SIGGRAPH paper "Discovering Folding Lines for Surface Compression"
-[Website](https://sites.google.com/view/discovering-folding-lines)
+
+\[[Website](https://sites.google.com/view/discovering-folding-lines)\]
 
 ![image](images/teaser.jpg)
 ## Installation
